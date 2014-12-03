@@ -11,18 +11,20 @@ import urllib
 
 register = template.Library()
 
+
 def _get_comment_list(object):
     ctype = ContentType.objects.get_for_model(object)
     tree = models.HComment.tree.root_nodes().filter(
-        content_type = ctype,
-        object_pk = object.id,
-        is_public = True,
-        is_removed = False,
+        content_type=ctype,
+        object_pk=object.id,
+        is_public=True,
+        is_removed=False,
     )
     comments = []
     for root in tree:
         comments.extend(root.get_descendants(True))
     return comments
+
 
 @register.tag
 def get_comment_list(parser, token):
@@ -47,7 +49,8 @@ def get_comment_list(parser, token):
     var_name = contents[-1]
     return Node(object, var_name)
 
-@register.inclusion_tag('hcomments/show_comment_list.html', takes_context = True)
+
+@register.inclusion_tag('hcomments/show_comment_list.html', takes_context=True)
 def show_comment_list(context, object):
     ctx = Context(context)
     ctx.update({
@@ -55,7 +58,8 @@ def show_comment_list(context, object):
     })
     return ctx
 
-@register.inclusion_tag('hcomments/show_single_comment.html', takes_context = True)
+
+@register.inclusion_tag('hcomments/show_single_comment.html', takes_context=True)
 def show_single_comment(context, comment):
     request = context['request']
     comment_owner = comment.id in request.session.get('user-comments', set())
@@ -65,6 +69,7 @@ def show_single_comment(context, comment):
         'c': comment,
         'comment_owner': comment_owner,
     }
+
 
 @register.filter
 def thread_owner(comment):
@@ -76,6 +81,7 @@ def thread_owner(comment):
     else:
         return False
 
+
 @register.inclusion_tag('hcomments/show_comment_form.html', takes_context=True)
 def show_comment_form(context, object):
     ctx = Context(context)
@@ -83,6 +89,7 @@ def show_comment_form(context, object):
         'object': object,
     })
     return ctx
+
 
 @register.inclusion_tag('hcomments/show_subscribe_form.html', takes_context=True)
 def show_subscribe_form(context, object):
@@ -92,9 +99,11 @@ def show_subscribe_form(context, object):
     })
     return ctx
 
+
 @register.filter
 def subscribed(object, user):
     return models.ThreadSubscription.objects.subscribed(object, user)
+
 
 @register.filter
 def gravatar(email, args=''):
@@ -116,4 +125,3 @@ def gravatar(email, args=''):
         'rating': rating,
     })
     return gravatar_url
-

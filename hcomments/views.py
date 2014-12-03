@@ -10,6 +10,7 @@ from django import http
 from django.conf import settings as dsettings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.comments.models import Comment
+from django.contrib.comments.signals import comment_will_be_posted
 from django.contrib.comments.views import comments as comments_views
 from django.contrib.contenttypes.models import ContentType
 from django.core.mail import send_mail
@@ -21,6 +22,7 @@ from django.template.loader import render_to_string
 from hcomments import models
 from hcomments import settings
 
+
 def send_email_to_subscribers(sender, **kwargs):
     subscripted = models.ThreadSubscription.objects.subscriptions(kwargs['instance'].content_object)
     for u in filter(lambda x: x.email, subscripted):
@@ -31,21 +33,21 @@ def send_email_to_subscribers(sender, **kwargs):
         }
         subject = 'New comment on a subscribed page'
         body = render_to_string('hcomments/thread_email.txt', ctx)
-        send_mail(subject, body, dsettings.DEFAULT_FROM_EMAIL, [ u.email ])
+        send_mail(subject, body, dsettings.DEFAULT_FROM_EMAIL, [u.email])
 
 post_save.connect(send_email_to_subscribers, sender=Comment)
 post_save.connect(send_email_to_subscribers, sender=models.HComment)
 
-from django.contrib.comments.signals import comment_will_be_posted
+
 class CaptchaFailed(Exception):
     pass
+
 
 def on_comment_will_be_posted(sender, **kw):
     if sender is not models.HComment:
         return True
 
-    # se hcomments è configurato per usare recaptcha dobbiamo aggiungere uno
-    # step di validazione qui
+    # if comments is configure to used a captcha we need to another validation step
     import hcomments
     request = kw['request']
     comment = kw['comment']
@@ -62,6 +64,7 @@ def on_comment_will_be_posted(sender, **kw):
     return True
 
 comment_will_be_posted.connect(on_comment_will_be_posted)
+
 
 def post_comment(request):
     from recaptcha_works.decorators import fix_recaptcha_remote_ip
@@ -82,9 +85,9 @@ def post_comment(request):
     if isinstance(result, comments_views.CommentPostBadRequest):
         return http.HttpResponseBadRequest('')
 
-    # quello che segue è codice piuttosto brutto. Purtroppo la post_comment
-    # restituisce un HttpResponse e da quello l'unico modo che ho per dedurre
-    # il commento appena generato è analizzare l'header Location
+    # since post_comment returns a HttpResponse, the only way to determine
+    # the comment that has just been posted is to analyze the Location header
+
     try:
         loc = result['Location']
     except:
@@ -95,7 +98,7 @@ def post_comment(request):
         cid = parse_qs(url.query).get('c')
         try:
             cid = int(cid[0])
-            comment = models.HComment.objects.get(pk = cid)
+            comment = models.HComment.objects.get(pk=cid)
         except:
             comment = None
         else:
@@ -109,13 +112,14 @@ def post_comment(request):
                 'c': comment,
                 'owner': True,
             },
-            context_instance = RequestContext(request)
+            context_instance=RequestContext(request)
         )
     except Exception, e:
         if dsettings.DEBUG:
             return http.HttpResponseBadRequest(str(e))
         else:
             raise
+
 
 def delete_comment(request):
     if request.method != 'POST':
@@ -125,7 +129,7 @@ def delete_comment(request):
     except:
         raise http.HttpResponseBadRequest()
     try:
-        comment = models.HComment.objects.get(pk = cid)
+        comment = models.HComment.objects.get(pk=cid)
     except models.HComment.DoesNotExist:
         return http.HttpResponse('')
 
@@ -138,6 +142,7 @@ def delete_comment(request):
         request.session['user-comments'] = s
     comment.delete()
     return http.HttpResponse('')
+
 
 def subscribe(request):
     if request.method != 'POST':
@@ -157,12 +162,13 @@ def subscribe(request):
 
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
+
 @staff_member_required
-def moderate_comment(request, cid, public = False):
+def moderate_comment(request, cid, public=False):
     try:
-        comment = get_object_or_404(models.HComment, pk = int(cid))
+        comment = get_object_or_404(models.HComment, pk=int(cid))
     except (TypeError, ValueError):
         return http.HttpResponseBadRequest()
     comment.is_public = public
     comment.save()
-    return http.HttpResponse(content = 'done', status = 200)
+    return http.HttpResponse(content='done', status=200)

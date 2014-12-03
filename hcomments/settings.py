@@ -1,14 +1,12 @@
 # -*- coding: UTF-8 -*-
 from django.conf import settings
 
-# callable invocato per verificare se l'utente collegato alla richiesta può
-# essere considerato un moderatore per il commento
+# callable invoked in order to determine if the current user can moderate the comment.
 MODERATOR_REQUEST = getattr(settings, 'HCOMMENTS_MODERATOR_REQUEST', lambda request, comment: request.user.is_superuser)
 
-# callable per identificare i proprietari di un thread di commenti, deve
-# ritorna None o una lista di user
+# callable invoked to identify the thread's owners, should return None or a list of users.
 THREAD_OWNERS = getattr(settings, 'HCOMMENTS_THREAD_OWNERS', lambda o: None)
 
-# callable per decidere se includere o meno un captcha nella form di commento;
-# di default non viene incluso mai.
+# callable invoked to determine if we should include a Captcha inside comment's form.
+# default behaviour is to never include it.
 RECAPTCHA = getattr(settings, 'HCOMMENTS_RECAPTCHA', lambda request: False)

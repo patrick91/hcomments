@@ -1,16 +1,13 @@
-import sys
-import time
-
 from django.db import connection, transaction
-from django.conf import settings
 from django.contrib.comments.models import Comment
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from hcomments.models import HComment
 
+
 class Command(BaseCommand):
     help = "Import the standard comments into hcomments"
-    
+
     @transaction.commit_on_success
     def handle(self, *args, **options):
         """
@@ -20,8 +17,8 @@ class Command(BaseCommand):
         INSERT INTO hcomments_hcomment(comment_ptr_id, parent_id, lft, rght, tree_id, level)
         VALUES (%s, NULL, 1, 2, %s, 0)
         """
-        hcomments = dict(( (c.id, c) for c in HComment.objects.all() ))
-        comments = dict(( (c.id, c) for c in Comment.objects.all() if c.id not in hcomments ))
+        hcomments = dict(((c.id, c) for c in HComment.objects.all()))
+        comments = dict(((c.id, c) for c in Comment.objects.all() if c.id not in hcomments))
 
         cursor = connection.cursor()
 

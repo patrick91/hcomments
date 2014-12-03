@@ -1,12 +1,16 @@
 # -*- coding: UTF-8 -*-
 from django import forms
 from django.contrib.comments.forms import CommentForm
+
+import recaptcha_works.fields
+
 from hcomments import models
+
 
 class HCommentForm(CommentForm):
     parent = forms.IntegerField(
-        min_value = 0, required = False, initial = 0,
-        widget = forms.HiddenInput,
+        min_value=0, required=False, initial=0,
+        widget=forms.HiddenInput,
     )
 
     def get_comment_model(self):
@@ -17,10 +21,9 @@ class HCommentForm(CommentForm):
         if self.cleaned_data['parent'] == 0:
             data['parent'] = None
         else:
-            data['parent'] = models.HComment.objects.get(id = self.cleaned_data['parent'])
+            data['parent'] = models.HComment.objects.get(id=self.cleaned_data['parent'])
         return data
 
-import recaptcha_works.fields
 
 class HCommentFormWithCaptcha(HCommentForm):
     captcha = recaptcha_works.fields.RecaptchaField()
